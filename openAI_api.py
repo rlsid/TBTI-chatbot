@@ -23,12 +23,12 @@ def chat_completion_request(messages, tools=None, tool_choice=None, model=GPT_MO
     
 
 # embedding function
-def embedding(question, model=EMBEDDING_MODEL, dimention=DIMENSION):
+def embedding(question, model=EMBEDDING_MODEL, dimension=DIMENSION):
     try:
         response = client.embeddings.create(
             input=question,
             model=model,
-            dimensions=dimention
+            dimensions=dimension
         )
         return response.data[0].embedding
     
