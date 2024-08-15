@@ -19,5 +19,31 @@
                 "required": ["location"]
             }
         }
+    },
+
+    {
+        "type": "function",
+        "function": {
+            "name": "create_travel_plan",
+            "description": "create a travel plan.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question":{
+                        "type": "string",
+                        "description": "bring the user's question about place recommendation."
+                    },
+                    "location": {
+                        "type": "string",
+                        "description": "The city of Korean, e.g. 서울 or 부산 or 대구"
+                    },
+                    "duration": {
+                        "type": "string",
+                        "description": "the duration of the travel plans, If the user does not specify the duration of the trip, you should ask specifically about the duration of the trip. e.g. 하루, 1박 2일, 2박 3일"
+                    }
+                },
+                "required": ["location", "duration"]
+            }
+        }
     }
 ]
