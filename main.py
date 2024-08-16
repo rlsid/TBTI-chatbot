@@ -1,7 +1,7 @@
 import os
 import json
 
-from access_miluvsDB import db
+from access_milvusDB import db
 from openAI_api import chat_completion_request
 from available_function import recommand_travel_destination
 
