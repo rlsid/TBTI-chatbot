@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient
 
-URI = 'http://aws public ip:19530'
+URI = 'http://43.203.127.130:19530'
 
 class MilvusDB:
     def __init__(self, uri=URI):
@@ -74,3 +74,5 @@ class MilvusDB:
 
 # db 연결
 db = MilvusDB()
+
+print("accees_milvusDB 모듈 로드")

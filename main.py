@@ -1,9 +1,10 @@
-import os
 import json
 
 from access_milvusDB import db
 from openAI_api import chat_completion_request
 from available_function import recommand_travel_destination
+from available_function import create_travel_plan
+
 
 # 함수 정의 가져오는 함수
 def get_defined_function():
@@ -16,9 +17,8 @@ def get_defined_function():
         print('json 파일 로드하기 실패:', e)
 
 
-    
-def main(question):
 
+def main(question):
     # 정의된 함수 정보 가져오기
     tools = get_defined_function()
 
@@ -38,44 +38,57 @@ def main(question):
 
     tool_calls = assistant_message.tool_calls
 
-    # 호출할 수 있는 함수가 존재한다면 함수 호출
-    if tool_calls:
-        available_functions = {
-            "recommand_travel_destination": recommand_travel_destination
-        }
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_to_call = available_functions[function_name]
-            function_args = json.loads(tool_call.function.arguments)
-            function_response = function_to_call(
-                question=question,
-                location=function_args.get("location")
-            )
+    try:
+        # 호출할 수 있는 함수가 존재한다면 함수 호출
+        if tool_calls:
+            available_functions = {
+                "recommand_travel_destination": recommand_travel_destination,
+                "create_travel_plan": create_travel_plan
+            }
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_to_call = available_functions[function_name]
+                function_args = json.loads(tool_call.function.arguments)
 
-            print(function_response)
+                function_response = function_to_call(
+                    question=question,
+                    **function_args
+                )
 
-            '''
-            # 함수 리턴값이 LLM 최종 답변이라면 굳이 아래 형식으로 실행하지 않아도 될듯
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "name": function_name,
-                    "content": function_response,
-                }
-            )
+                print(function_response)
 
-            final_response = openAI_api.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-            )
-            print(final_response.choices[0].message.content)
-            '''
-    else:
-        print(assistant_message)
+                '''
+                # 함수 리턴값이 LLM 최종 답변이라면 굳이 아래 형식으로 실행하지 않아도 될듯
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": function_name,
+                        "content": function_response,
+                    }
+                )
 
-question = "강릉 여행지 알려줘"
+                final_response = openAI_api.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages,
+                )
+                print(final_response.choices[0].message.content)
+                '''
+        else:
+            print(assistant_message)
+
+    except Exception as e:
+        print("에러 발생: ", e)
+        
+        #DB 연결 끊기
+        db.unconnect()
+
+
+
+question = "서울 여행지 추천해줘"
 main(question)
+
+
 
 #DB 연결 끊기
 db.unconnect()

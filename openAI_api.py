@@ -36,3 +36,5 @@ def embedding(question, model=EMBEDDING_MODEL, dimension=DIMENSION):
         print('임베딩 벡터 생성 실패')
         print(f"Exception: {e}")
         return e
+
+print("openAI API 모듈 로드")
