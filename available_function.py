@@ -1,4 +1,4 @@
-from access_miluvsDB import db
+from access_milvusDB import db
 from openAI_api import embedding
 from openAI_api import chat_completion_request
 
@@ -49,10 +49,11 @@ def create_travel_plan(question, location, duration):
     여행 계획을 세울 때에는 다음의 조건을 꼭 만족해야 합니다.
     1. 각 날짜별로 방문할 장소를 추천합니다. 이때 날짜별로 추천하는 장소의 개수는 3개여야 합니다.
     2. 같은 날짜에 방문하는 장소끼리의 거리는 10KM 이내여야 합니다.
-    3. 장소의 카테고리가 '카페/디저트'인 장소는 한 날짜에 하나보다 많으면 안 됩니다.
-    4. 각 장소는 위치, 카테고리, 설명, 운영정보가 있어야 합니다.
-    5. 설명은 장소의 키워드를 이용하여 만들어 주세요.
-    6. 운영정보가 존재할 때만 운영 정보를 제공해 주세요. 
+    3. 모든 날짜를 통틀어 추천되는 장소는 겹치면 안 됩니다.
+    4. 장소의 카테고리가 '카페/디저트'인 장소는 한 날짜에 하나보다 많으면 안 됩니다.
+    5. 각 장소는 위치, 카테고리, 설명, 운영정보가 있어야 합니다.
+    6. 설명은 장소의 키워드를 이용하여 만들어 주세요.
+    7. 운영정보 값이 reference에 존재할 때만 운영 정보를 제공해 주세요. 운영정보값은 reference 이외의 값에서 가져오지 않습니다.
     """
     messages.append({"role": "system", "content": system_prompt})
     
