@@ -25,7 +25,7 @@ def recommand_travel_destination(question, location):
 
     system_prompt = """
     - 다음과 같은 형식의 JSON 객체로 추천할 만한 여행지 목록을 생성해 주세요. 
-    - reference의 정보를 사용하며, reference 이외의 정보는 사용하지 않습니다.
+    - reference의 정보를 사용하며, reference 이외의 정보는 사용하지 않습니다. 당신이 알고있는 정보는 사용하지 않습니다.
     - 각 장소는 이름, 위치, 카테고리, 설명, 그리고 리다이렉션 URL을 포함합니다. 
     - JSON 객체는 다음과 같은 구조를 가져야 합니다:
     {"answer": "장소를 추천한다는 짧은 추천의 말이 들어갑니다","place": [{"place_name": "장소 이름","location": "장소의 위치","category": "장소의 카테고리","description": "장소에 대한 간단한 설명","redirection_url": "장소에 대한 추가 정보를 제공하는 URL"},...]}
@@ -84,11 +84,11 @@ def reserve_place(question, location=None, place_name=None):
 
     #filtering 생성
     filters = ["(reservation == true)"]
-    
     if location:
         area_name = milvus.make_filtering(location)
         filters.append(f"(area_name == '{area_name}')")
     elif place_name:
+        place_name = place_name.replace(' ', '%')
         filters.append(f"(place_name like '{place_name}%')")
     filtering = ' and '.join(filters)
 
@@ -103,14 +103,13 @@ def reserve_place(question, location=None, place_name=None):
         {"role": "user", "content":f"사용자 질문: {question} \n reference: {total_results}" }
     ]
 
-
     system_prompt = """
     - 다음과 같은 형식의 JSON 객체로 예약 가능한 여행지 목록을 생성해 주세요. 
     - reference의 정보를 사용하며, reference 이외의 정보는 사용하지 않습니다.
     - 각 장소는 이름, 위치, 카테고리, 설명, 그리고 리다이렉션 URL을 포함합니다. 
     - JSON 객체는 다음과 같은 구조를 가져야 합니다:
-    {"answer": "장소를 추천한다는 짧은 추천의 말이 들어갑니다","place": [{"place_name": "장소 이름","location": "장소의 위치","category": "장소의 카테고리","description": "장소에 대한 간단한 설명","redirection_url": "장소에 대한 추가 정보를 제공하는 URL"},...]}
-    - 이 형식에 맞게 명소 최대 5곳을 추천해 주세요.
+    {"answer": "예약 가능한 장소를 알려준다는 짧은 말이 들어갑니다","place": [{"place_name": "장소 이름","location": "장소의 위치","category": "장소의 카테고리","description": "장소에 대한 간단한 설명","redirection_url": "장소에 대한 추가 정보를 제공하는 URL"},...]}
+    - 사용자가 예약 가능한 여러 장소를 알고 싶어할 경우 최대 5곳을 알려주고, 특정 하나의 장소일 경우 1곳만 알려줍니다.
     """
     messages.append({"role": "system", "content": system_prompt})
 

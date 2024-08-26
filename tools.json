@@ -49,7 +49,7 @@
                 "properties": {
                     "location": {
                         "type": "string",
-                        "description": "put the name of location if the user is looking for several places to reserve, e.g. 서울 or 부산 or 대구"
+                        "description": "put the name of location if the user is looking for several places to reserve, not a specific place, e.g. 서울 or 부산 or 대구"
                     },
                     "place_name": {
                         "type": "string",

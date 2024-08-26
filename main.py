@@ -62,6 +62,7 @@ async def ask_ai(request: QuestionRequest):
 
         assistant_message = chat_response.choices[0].message
         messages.append(assistant_message)
+        print(assistant_message)
 
         tool_calls = assistant_message.tool_calls
 

@@ -46,9 +46,9 @@ class MilvusDB:
         return results
     
     # 여러 테이블 검색 함수
-    def search_all_tables(self, embedding, filtering):
-        results_localCreator = self.search_table('kstartup_travel_sites', embedding, filtering, top_k=10)
-        results_nowLocal = self.search_table('nowlocal_travel_sites', embedding, filtering, top_k=10)
+    def search_all_tables(self, embedding, filtering, top_k=10):
+        results_localCreator = self.search_table('kstartup_travel_sites', embedding, filtering, top_k)
+        results_nowLocal = self.search_table('nowlocal_travel_sites', embedding, filtering, top_k)
 
         return results_localCreator, results_nowLocal
 
