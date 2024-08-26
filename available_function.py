@@ -48,7 +48,8 @@ def create_travel_plan(question, location, duration):
     
     vector = embedding(question)
     
-    filtering = milvus.make_filtering(location)
+    area_name = milvus.make_filtering(location)
+    filtering = f"area_name == '{area_name}'"
     results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering)
 
     total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
