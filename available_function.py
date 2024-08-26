@@ -11,21 +11,34 @@ def recommand_travel_destination(question, location):
     vector  =  embedding(question)
 
     # 필터링 생성 후 테이블 검색 진행
-    filtering = milvus.make_filtering(location)
-    results_localCreator, results_nowLocal, results_nature = milvus.search_all_tables(embedding=vector, filtering=filtering)
+    area_name = milvus.make_filtering(location)
+    filtering = f"area_name == '{area_name}'" 
+    results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering)
 
     # 쿼리 결과 합치기
-    total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal, results_nature)
+    total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
 
-    
     # 결과 참고해서 LLM 답변 생성
     messages = [
-        {"role": "system", "content": "- 당신은 여행을 계획하는데 도움을 주는 chatbot 'TBTI'입니다. \n- 당신의 역할은 사용자의 질문에 reference를 바탕으로 답변하는 것 입니다.\n- reference 참고 자료에서 쓸만한 정보가 부족할 때, 당신이 기존에 알고 있는 정보를 이용하여 답변하세요.\n- 장소에 대한 정보를 전달할 때는 아래의 조건을 만족해야 합니다.\n\n조건:\n1. 전달 장소 개수: 5개 \n2. 각 장소는 위치, 카테고리, 설명이 있어야 합니다.\n3. 설명은 장소의 키워드를 이용하여 만들어주세요."},
         {"role": "user", "content":f"사용자 질문: {question} \n reference: {total_results}" }
     ]
-    llm_response = chat_completion_request(messages=messages).choices[0].message.content
+
+    system_prompt = """
+    - 다음과 같은 형식의 JSON 객체로 추천할 만한 여행지 목록을 생성해 주세요. 
+    - reference의 정보를 사용하며, reference 이외의 정보는 사용하지 않습니다.
+    - 각 장소는 이름, 위치, 카테고리, 설명, 그리고 리다이렉션 URL을 포함합니다. 
+    - JSON 객체는 다음과 같은 구조를 가져야 합니다:
+    {"answer": "장소를 추천한다는 짧은 추천의 말이 들어갑니다","place": [{"place_name": "장소 이름","location": "장소의 위치","category": "장소의 카테고리","description": "장소에 대한 간단한 설명","redirection_url": "장소에 대한 추가 정보를 제공하는 URL"},...]}
+    - 이 형식에 맞게 명소 최대 5곳을 추천해 주세요.
+    """
+    messages.append({"role":"system", "content": f"{system_prompt}"})
+
+    llm_response = chat_completion_request(
+        messages=messages,
+        response_format={"type":"json_object"}
+    )
     
-    return llm_response
+    return llm_response.choices[0].message.content
 
 
 ## 여행 계획 생성 함수
@@ -36,9 +49,9 @@ def create_travel_plan(question, location, duration):
     vector = embedding(question)
     
     filtering = milvus.make_filtering(location)
-    results_localCreator, results_nowLocal, results_nature = milvus.search_all_tables(embedding=vector, filtering=filtering)
+    results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering)
 
-    total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal, results_nature)
+    total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
     
     messages = [
         {"role": "system", "content": "당신은 여행을 계획하는 데에 도움을 주는 chatbot 'TBTI'입니다.\n당신의 역할은 사용자의 질문에서 사용자가 여행하려는 여행 지역과 여행 기간을 파악하고 reference를 참고하여 여행 계획을 생성하는 것입니다.\nreference 참고 자료에서 쓸만한 정보가 부족할 때, 당신이 기존에 알고 있는 정보를 이용하여 답변하세요."},
@@ -63,4 +76,51 @@ def create_travel_plan(question, location, duration):
     return llm_response
 
 
+def reserve_place(question, location=None, place_name=None):
+    
+    # DB 연결 및 질문 임베딩
+    milvus = db
+    vector = embedding(question)
+
+    #filtering 생성
+    filters = ["(reservation == true)"]
+    
+    if location:
+        area_name = milvus.make_filtering(location)
+        filters.append(f"(area_name == '{area_name}')")
+    elif place_name:
+        filters.append(f"(place_name like '{place_name}%')")
+    filtering = ' and '.join(filters)
+
+    # 쿼리 진행
+    results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering)
+    
+    # 쿼리 결과 합치기
+    total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
+
+    # 결과 참고해서 LLM 답변 생성
+    messages = [
+        {"role": "user", "content":f"사용자 질문: {question} \n reference: {total_results}" }
+    ]
+
+
+    system_prompt = """
+    - 다음과 같은 형식의 JSON 객체로 예약 가능한 여행지 목록을 생성해 주세요. 
+    - reference의 정보를 사용하며, reference 이외의 정보는 사용하지 않습니다.
+    - 각 장소는 이름, 위치, 카테고리, 설명, 그리고 리다이렉션 URL을 포함합니다. 
+    - JSON 객체는 다음과 같은 구조를 가져야 합니다:
+    {"answer": "장소를 추천한다는 짧은 추천의 말이 들어갑니다","place": [{"place_name": "장소 이름","location": "장소의 위치","category": "장소의 카테고리","description": "장소에 대한 간단한 설명","redirection_url": "장소에 대한 추가 정보를 제공하는 URL"},...]}
+    - 이 형식에 맞게 명소 최대 5곳을 추천해 주세요.
+    """
+    messages.append({"role": "system", "content": system_prompt})
+
+    llm_response = chat_completion_request(
+        messages=messages,
+        response_format={"type":"json_object"}
+    )
+    
+    return llm_response.choices[0].message.content
+    
+
 print("available_function 모듈 로드")
+        

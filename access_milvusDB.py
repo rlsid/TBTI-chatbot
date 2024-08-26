@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient
 
-URI = 'http://43.203.127.130:19530'
+URI = 'http://43.201.50.124:19530'
 
 class MilvusDB:
     def __init__(self, uri=URI):
@@ -37,35 +37,45 @@ class MilvusDB:
         results = self.client.search(
             collection_name=table_name,
             data=[embedding],
-            filter=f"area_name == '{filtering}'",
+            filter=f"{filtering}",
             anns_field="embedding",
             search_params=search_params,
-            output_fields=["id", "text", "operation"],
+            output_fields=["id", "text", "reservation", "place_name", "category"],
             limit=top_k
         )
         return results
     
     # 여러 테이블 검색 함수
     def search_all_tables(self, embedding, filtering):
-        
         results_localCreator = self.search_table('kstartup_travel_sites', embedding, filtering, top_k=10)
         results_nowLocal = self.search_table('nowlocal_travel_sites', embedding, filtering, top_k=10)
-        results_nature = self.search_table('nature_travel_sites', embedding, filtering, top_k=5)
 
-        return results_localCreator, results_nowLocal, results_nature
+        return results_localCreator, results_nowLocal
 
     # 쿼리 검색 결과 하나로 묶는 함수
-    def get_formatted_results(self, results_localCreator, results_nowLocal, results_nature):
-        list_of_results = [results_localCreator[0], results_nowLocal[0], results_nature[0]]
-        formatted_results = ""
+    def get_formatted_results(self, results_localCreator, results_nowLocal):
+        list_of_results = [results_localCreator[0], results_nowLocal[0]]
+        formatted_results = []
+        #formatted_results = ""
 
         for result in list_of_results:
+            '''
+            length = len(result)
+            for num in range(length):
+                data = {
+                    'place_name': result[num]['entity']['place_name'],
+                    'category': result[num]['entity']['category'],
+                    'redirection_url': f"http://localhost:3000/detail/{result[num]['entity']['id']}"
+                }
+                formatted_results.append(data)
+            ''' 
+            
             length = len(result)
             for num in range(length):
                 text = result[num]['entity']['text']
-                text += f"운영정보: '{result[num]['entity']['operation']}'"
+                text += f"상세페이지: 'http://localhost:3000/detail/{result[num]['entity']['id']}'"
                 formatted_results += text + "\n\n"
-
+            
         return formatted_results
     
     # milvus 연결 끊기

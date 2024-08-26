@@ -1,11 +1,14 @@
 import json
+import traceback
+
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from access_milvusDB import db
+from access_milvusDB import MilvusDB
 from openAI_api import chat_completion_request
 from available_function import recommand_travel_destination
 from available_function import create_travel_plan
-from fastapi.middleware.cors import CORSMiddleware
+from available_function import reserve_place
 
 app = FastAPI()
 
@@ -40,6 +43,9 @@ def get_defined_function():
 async def ask_ai(request: QuestionRequest):
     question = request.question  # JSON에서 question 필드 추출
 
+    # db 연결
+    db = MilvusDB()
+
     # 정의된 함수 정보 가져오기
     tools = get_defined_function()
 
@@ -62,29 +68,27 @@ async def ask_ai(request: QuestionRequest):
         if tool_calls:
             available_functions = {
                 "recommand_travel_destination": recommand_travel_destination,
-                "create_travel_plan": create_travel_plan
+                "create_travel_plan": create_travel_plan,
+                "reserve_place": reserve_place
             }
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
                 function_to_call = available_functions.get(function_name)
                 function_args = json.loads(tool_call.function.arguments)
 
-                # function_args에 question이 없는 경우에만 question 추가
-                if 'question' not in function_args:
-                    function_response = function_to_call(
+                # tools.json 함수 정의에 question 빼면 매개변수에 자체적으로 값 넣지 않음
+                function_response = function_to_call(
                         question=question,
                         **function_args
-                    )
-                else:
-                    function_response = function_to_call(
-                        **function_args
-                    )
-
+                )
+                
                 return {"response": function_response}
+               
         else:
             return {"response": assistant_message.content}
     except Exception as e:
         print("에러 발생: ", e)
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="AI 처리 중 오류 발생")
     finally:
         # DB 연결 끊기

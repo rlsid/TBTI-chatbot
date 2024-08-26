@@ -7,13 +7,14 @@ DIMENSION = 768
 client = OpenAI()
 
 # chat completions function
-def chat_completion_request(messages, tools=None, tool_choice=None, model=GPT_MODEL):
+def chat_completion_request(messages, tools=None, tool_choice=None, response_format=None, model=GPT_MODEL):
     try:
         response = client.chat.completions.create(
             model=model,
             messages=messages,
             tools=tools,
             tool_choice=tool_choice,
+            response_format=response_format
         )
         return response
     except Exception as e:
