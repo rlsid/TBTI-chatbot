@@ -38,8 +38,10 @@ def recommand_travel_destination(question, location):
         response_format={"type":"json_object"}
     )
     
-    return llm_response.choices[0].message.content
-
+    response = llm_response.choices[0].message.content
+    response_json = json.loads(response)
+    
+    return response_json['answer'], response_json['place']
 
 ## 여행 계획 생성 함수
 def create_travel_plan(question, location, duration):
@@ -74,7 +76,7 @@ def create_travel_plan(question, location, duration):
     
     llm_response = chat_completion_request(messages).choices[0].message.content
     
-    return llm_response
+    return llm_response, None
 
 
 def reserve_place(question, location=None, place_name=None):
@@ -119,7 +121,10 @@ def reserve_place(question, location=None, place_name=None):
         response_format={"type":"json_object"}
     )
     
-    return llm_response.choices[0].message.content
+    response = llm_response.choices[0].message.content
+    response_json = json.loads(response)
+    
+    return response_json['answer'], response_json['place']
     
 
 print("available_function 모듈 로드")
