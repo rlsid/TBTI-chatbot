@@ -9,6 +9,7 @@ from openAI_api import chat_completion_request
 from available_function import recommand_travel_destination
 from available_function import create_travel_plan
 from available_function import reserve_place
+from typing import Optional, Dict
 
 app = FastAPI()
 
@@ -24,7 +25,8 @@ class QuestionRequest(BaseModel):
     question: str
 
 class AiResponse(BaseModel):
-    response: str
+    answer: str
+    place: Optional[list[dict]]
 
 
 # 함수 정의 가져오는 함수
@@ -77,16 +79,12 @@ async def ask_ai(request: QuestionRequest):
                 function_to_call = available_functions.get(function_name)
                 function_args = json.loads(tool_call.function.arguments)
 
-                # tools.json 함수 정의에 question 빼면 매개변수에 자체적으로 값 넣지 않음
-                function_response = function_to_call(
-                        question=question,
-                        **function_args
-                )
-                
-                return {"response": function_response}
+                # 함수 호출 및 결과 반환
+                answer, place = function_to_call(question=question, **function_args)
+                return {"answer": answer, "place": place}
                
         else:
-            return {"response": assistant_message.content}
+            return AiResponse(answer=assistant_message.content, place=None)
     except Exception as e:
         print("에러 발생: ", e)
         traceback.print_exc()
@@ -100,5 +98,4 @@ async def ask_ai(request: QuestionRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
-
 
