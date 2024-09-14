@@ -1,101 +1,56 @@
-import json
-import traceback
+import os
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from access_milvusDB import MilvusDB
-from openAI_api import chat_completion_request
-from available_function import recommand_travel_destination
-from available_function import create_travel_plan
-from available_function import reserve_place
-from typing import Optional, Dict
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.prebuilt import create_react_agent
+from langchain_core.pydantic_v1 import BaseModel, Field
 
-app = FastAPI()
+from openAI_api import llm
+from access_milvusDB import db
+from available_functions import callable_tools
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# langsmith, langchain 환경 변수 설정
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "본인의 lanchain api key 입력"
+os.environ["LANGCHAIN_PROJECT"] = "langchain 프로젝트 이름 입력"
+
+
+def ask_ai(agent, config):
+    while True:
+        # 사용자 질문 받기 부분 - q라고 쓰면 대화 종료
+        question = input("사용자 : ")
+
+        if(question == 'q'):
+            # DB 연결 끊기
+            db.unconnect()
+            break
+
+        # 에이전트 실행
+        response = agent.invoke({"messages": [("human", f"{question}")]}, config)
+        ai_answer = response["messages"][-1].content
+        print("ai: ", ai_answer)
+        
+        
+
+# 대화의 초기 프롬프트 생성
+initial_system_prompt = "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
+
+# 대화 기록 메모리 생성
+memory = MemorySaver()
+
+# 함수 호출 도구 준비
+tools = callable_tools
+
+# 함수 호출 에이전트 생성 - 호출 가능한 함수에 대한 정보를 전달
+agent = create_react_agent(
+    llm, 
+    tools, 
+    state_modifier=initial_system_prompt, 
+    checkpointer=memory
 )
 
-class QuestionRequest(BaseModel):
-    question: str
+config = {"configurable": {"thread_id": "test-thread"}}
 
-class AiResponse(BaseModel):
-    answer: str
-    place: Optional[list[dict]]
-
-
-# 함수 정의 가져오는 함수
-def get_defined_function():
-    try:
-        with open('tools.json', encoding='UTF8') as f:
-            tools = json.load(f)
-        return tools
-    
-    except Exception as e:
-        print('json 파일 로드하기 실패:', e)
-        raise HTTPException(status_code=500, detail="JSON 파일 로드 실패")
-
-# 질문을 처리하는 API 엔드포인트
-@app.post("/ask-ai/", response_model=AiResponse)
-async def ask_ai(request: QuestionRequest):
-    question = request.question  # JSON에서 question 필드 추출
-
-    # db 연결
-    db = MilvusDB()
-
-    # 정의된 함수 정보 가져오기
-    tools = get_defined_function()
-
-    # 사용자 질문
-    messages = [
-        {"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."},
-        {"role": "user", "content": f"{question}"}
-    ]
-
-    try:
-        chat_response = chat_completion_request(
-            messages, tools=tools
-        )
-
-        assistant_message = chat_response.choices[0].message
-        messages.append(assistant_message)
-        print(assistant_message)
-
-        tool_calls = assistant_message.tool_calls
-
-        if tool_calls:
-            available_functions = {
-                "recommand_travel_destination": recommand_travel_destination,
-                "create_travel_plan": create_travel_plan,
-                "reserve_place": reserve_place
-            }
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
-                function_to_call = available_functions.get(function_name)
-                function_args = json.loads(tool_call.function.arguments)
-
-                # 함수 호출 및 결과 반환
-                answer, place = function_to_call(question=question, **function_args)
-                return {"answer": answer, "place": place}
-               
-        else:
-            return AiResponse(answer=assistant_message.content, place=None)
-    except Exception as e:
-        print("에러 발생: ", e)
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="AI 처리 중 오류 발생")
-    finally:
-        # DB 연결 끊기
-        db.unconnect()
-
-
-# 포트수정가능
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+# 대화 메인 실행
+ask_ai(agent, config)
 
