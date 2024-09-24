@@ -1,38 +1,18 @@
 import os
-
+import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 
-from langchain_core.prompts import ChatPromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt import create_react_agent
-
 from openAI_api import llm
-from access_milvusDB import MilvusDB
+from access_milvusDB import database
 from available_functions import callable_tools
+from agent_executor import create_my_agent
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "api_key"
-os.environ["LANGCHAIN_PROJECT"] = "프로젝트이름"
-
-app = FastAPI()
-
-initial_system_prompt = "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."
-
-memory = MemorySaver()
-
-tools = callable_tools
-
-# 에이전트 생성
-agent = create_react_agent(
-    llm, 
-    tools, 
-    state_modifier=initial_system_prompt, 
-    checkpointer=memory
-)
-
-config = {"configurable": {"thread_id": "test-thread"}}
+os.environ["LANGCHAIN_API_KEY"] = "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"
+os.environ["LANGCHAIN_PROJECT"] = "TBTI_test"
 
 class QuestionRequest(BaseModel):
     question: str
@@ -41,9 +21,26 @@ class QuestionRequest(BaseModel):
 class AiResponse(BaseModel):
     answer: str
     place: Optional[List[Dict]] = None
-    
-db = MilvusDB()
 
+
+app = FastAPI()
+
+# 대화 기록 메모리 생성
+memory = MemorySaver()
+
+# 호출할 함수 리스트 가져오기
+tools = callable_tools
+
+# 에이전트 생성 
+agent = create_my_agent(
+    model=llm,
+    tools=tools,
+    checkpointer=memory
+)
+
+config = {"configurable": {"thread_id": "test-thread"}}    
+
+db = database
 
 @app.post("/ask-ai/", response_model=AiResponse)
 async def ask_ai(request: QuestionRequest):
@@ -52,10 +49,12 @@ async def ask_ai(request: QuestionRequest):
     try:
         db.reconnect()
         # 에이전트 실행
-        response = agent.invoke({"messages": [("human", f"{question}")]}, config)
-        ai_answer = response["messages"][-1].content
-        print(AiResponse(answer=ai_answer))
-        return AiResponse(answer=ai_answer)
+        response = agent.invoke({"messages": [("human", f"{question}")]}, config)['final_response']
+        response = response.strip("'<>() ").replace('\'', '\"').replace('None', 'null')
+        ai_answer = json.loads(response)
+        print("ai_answer:", ai_answer)
+        return ai_answer
+    
     except Exception as e:
         print("에러 발생: ", e)
         raise HTTPException(status_code=500, detail="AI 처리 중 오류 발생")

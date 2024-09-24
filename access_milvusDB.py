@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient
 
-URI = 'http://awsip:19530'
+URI = 'http://52.78.35.147:19530'
 
 class MilvusDB:
     def __init__(self, uri=URI):
@@ -23,6 +23,7 @@ class MilvusDB:
             print("재연결 시도 중...")
             self.client = self.connect()
         return self.client  
+    
     '''
     # 행정 구역을 기준으로 검색 지역 설정
     def select_searching_partition(self, input):
@@ -93,6 +94,6 @@ class MilvusDB:
             self.client = None
 
 # db 연결
-db = MilvusDB()
+database = MilvusDB()
 
 print("accees_milvusDB 모듈 로드")

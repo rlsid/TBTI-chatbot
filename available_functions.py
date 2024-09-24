@@ -1,8 +1,9 @@
+import json
 from langchain_core.tools import tool
-from access_milvusDB import db
-from openAI_api import embed
+from access_milvusDB import database
+from openAI_api import chat_completion_request
+from openAI_api import embedding
 
-# 여행지 추천 함수
 @tool
 def recommand_travel_destination(question : str, location : str, area : str) -> str:
     """
@@ -16,30 +17,42 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
               - 한국 행정 구역 : 서울특별시, 부산광역시, 인천광역시, 대구광역시, 대전광역시, 광주광역시, 울산광역시, 세종특별자치시, 경기도, 충청북도, 충청남도, 전라남도, 경상북도, 경상남도, 강원특별자치도, 전북특별자치도, 제주특별자치도
     """
 
-    milvus = db
+    milvus = database
 
     # 사용자 질문 벡터화
-    vector  =  embed.embed_query(question)
+    vector  =  embedding(question)
 
-    # 검색 필터링 생성 후 테이블 검색 진행
-    filtering = f"area_name == '{area}'"
+    # 필터링 생성 후 테이블 검색 진행
+    filtering = f"area_name == '{area}'" 
     results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering)
 
-    # 검색 결과 합치기
+    # 쿼리 결과 합치기
     total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
 
-    final_data= f"""
-        - 당신은 사용자가 원하는 여러 장소의 정보를 알려줍니다.
-        - reference의 정보를 사용하며, reference 이외의 당신이 알고있는 정보는 사용하지 않습니다.
-        - 사용자에게 전달하는 장소는 반드시 장소 이름, 위치, 장소 카테고리, 설명(장소 키워드와 해시태그를 이용해서 생성), 상세페이지 URL만을 존재합니다.
-        - 5개의 장소만 알려줍니다.
-        - reference : {total_results}
+    # 결과 참고해서 LLM 답변 생성
+    messages = [
+        {"role": "user", "content":f"user's question: {question} \n reference: {total_results}" }
+    ]
+
+    system_prompt = """
+    - Use the information from the reference and do not use any information other than the reference. Do not use the information you know.
+    - Please create a list of recommended destinations with JSON objects in the following format.
+    - JSON objects must have the following structure:
+    {"answer": "put a short sentence that recommand the places", "place": [{"place_name": "The name of the place", "location": "A detailed location of a place", "category": "category of place", "description": "A brief description of the place. make by using the keywords of the place", "redirection_url": "A URL for more information about the place"},...]}
+    - Please recommend up to five attractions according to this format.
+    - The answer is in Korean
     """
+    messages.append({"role":"system", "content": f"{system_prompt}"})
 
-    return final_data
+    llm_response = chat_completion_request(
+        messages=messages,
+        response_format={"type":"json_object"}
+    ).choices[0].message.content
+    
+    return llm_response
 
 
-# 여행 계획 생성 함수
+
 @tool
 def create_travel_plan(question : str, location : str, area : str, duration : str) -> str:
     """
@@ -53,30 +66,34 @@ def create_travel_plan(question : str, location : str, area : str, duration : st
         duration: the duration of the travel plans, If the user does not specify the duration of the trip, you should ask specifically about the duration of the trip. e.g. 하루, 1박 2일, 2박 3일
     """
 
-    milvus = db
-
-    # 사용자 질문 벡터화
-    vector  =  embed.embed_query(question)
-
-    # 검색 필터링 생성 후 테이블 검색 진행
+    milvus = database
+    
+    vector = embedding(question)
+    
     filtering = f"area_name == '{area}'"
     results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering)
 
-    # 검색 결과 합치기
     total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
-
-    final_data = f"""
-        - 당신은 여행을 계획하는데 도움을 줍니다. 사용자가 여행하려는 지역과 여행 기간을 파악하고 여행 계획을 생성하세요.
-        - reference의 정보를 사용하며, reference 이외의 당신이 알고있는 정보는 사용하지 않습니다.
-        - 여행 계획을 세울 때에는 다음의 조건을 꼭 만족해야 합니다.
-            1. 각 날짜별로 방문할 장소를 추천합니다. 이때 날짜별로 추천하는 장소의 개수는 3개여야 합니다.
-            2. 같은 날짜에 방문하는 장소끼리의 거리는 10KM 이내여야 합니다.
-            3. 모든 날짜를 통틀어 추천되는 장소는 겹치면 안 됩니다.
-            4. 장소의 카테고리가 '카페/디저트'인 장소는 한 날짜에 하나보다 많으면 안 됩니다.
-            5. 각 장소는 이름, 위치, 카테고리, 설명이 있어야 합니다.
-            6. 설명은 장소의 키워드를 이용하여 만들어 주세요.
-        - reference : {total_results} 
+    
+    messages = [
+        {"role": "system", "content": "Your role is to create a travel plan by referring to the reference. Use the information from the reference and do not use any information other than the reference. Do not use the information you know. The answer is in Korean"},
+        {"role": "user", "content": f"사용자 질문: {question} \n 여행 지역: {location} \n 여행 기간: {duration} \n reference: {total_results}"}
+    ]
+    
+    # 프롬프트 추가(그냥 잘 보이게 추가한 것)
+    system_prompt = """
+    When you plan your trip, you must meet the following conditions.
+    1. We recommend places to visit for each date. At this time, the number of places to recommend for each date should be three.
+    2. The distance between the places you visit on the same date must be within 10KM.
+    3. The recommended places across all dates should not overlap.
+    4. Place categories on one date must not overlap and must vary.
+    5. Each place must have a place name, location, and description.
+    6. Please make the explanation using the keyword of the place.
     """
-    return final_data
+    messages.append({"role": "system", "content": system_prompt})
+    llm_response = chat_completion_request(messages).choices[0].message.content
+    
+    return {"answer": llm_response, "place" : None}
+
 
 callable_tools = [recommand_travel_destination, create_travel_plan]
