@@ -93,7 +93,7 @@ def create_travel_plan(question : str, location : str, area : str, duration : st
     messages.append({"role": "system", "content": system_prompt})
     llm_response = chat_completion_request(messages).choices[0].message.content
     
-    return {"answer": llm_response, "place" : None}
+    return f'{{"answer": "{llm_response}", "place" : null}}'
 
 
 callable_tools = [recommand_travel_destination, create_travel_plan]

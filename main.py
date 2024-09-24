@@ -11,8 +11,8 @@ from available_functions import callable_tools
 from agent_executor import create_my_agent
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "자신의 langchain key 사용"
-os.environ["LANGCHAIN_PROJECT"] = "프로젝트 이름"
+os.environ["LANGCHAIN_API_KEY"] = "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"
+os.environ["LANGCHAIN_PROJECT"] = "TBTI_test2"
 
 class QuestionRequest(BaseModel):
     question: str
@@ -50,9 +50,10 @@ async def ask_ai(request: QuestionRequest):
         db.reconnect()
         # 에이전트 실행
         response = agent.invoke({"messages": [("human", f"{question}")]}, config)['final_response']
-        response = response.strip("'<>() ").replace('\'', '\"').replace('None', 'null')
+        response = response.strip("'<>() ").replace('\'', '\"')
+        
+        # json 문자열 json으로 역직렬화
         ai_answer = json.loads(response)
-        print("ai_answer:", ai_answer)
         return ai_answer
     
     except Exception as e:
