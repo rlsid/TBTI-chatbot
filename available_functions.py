@@ -38,7 +38,7 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
     - Use the information from the reference and do not use any information other than the reference. Do not use the information you know.
     - Please create a list of recommended destinations with JSON objects in the following format.
     - JSON objects must have the following structure:
-    {"answer": "put a short sentence that recommand the places", "place": [{"place_name": "The name of the place", "location": "A detailed location of a place", "category": "category of place", "description": "A brief description of the place. make by using the keywords of the place", "redirection_url": "A URL for more information about the place"},...]}
+    {"answer": "put a short sentence that recommand the places", "place": [{"place_name": "The name of the place", "description": "A brief description of the place. make by using the keywords of the place", "redirection_url": "A URL for more information about the place"},...]}
     - Please recommend up to five attractions according to this format.
     - The answer is in Korean
     """
@@ -87,13 +87,12 @@ def create_travel_plan(question : str, location : str, area : str, duration : st
     2. The distance between the places you visit on the same date must be within 10KM.
     3. The recommended places across all dates should not overlap.
     4. Place categories on one date must not overlap and must vary.
-    5. Each place must have a place name, location, and description.
-    6. Please make the explanation using the keyword of the place.
+    5. Each place must have a place name, location, and description made by using the keywords of the place.
     """
     messages.append({"role": "system", "content": system_prompt})
     llm_response = chat_completion_request(messages).choices[0].message.content
     
-    return f'{{"answer": "{llm_response}", "place" : null}}'
+    return {"answer": llm_response, "place" : None}
 
 
 callable_tools = [recommand_travel_destination, create_travel_plan]

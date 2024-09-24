@@ -38,7 +38,7 @@ def create_my_agent(
         final_response = response.content
         
         # AI 답변을 json 형식으로 만들어 final_response에 저장 / 답변 history에 저장 
-        return {"final_response" : f'{{"answer": "{final_response}", "place": null}}', "messages" : [response]}
+        return {"final_response" :  str({"answer": final_response, "place": None}), "messages" : [response]}
 
     # 도구 호출 시 최종 답변 생성하는 함수 정의(함수 실행 결과를 final_response 변수에 담음)
     def respond_after_calling_tools(state: AgentState):

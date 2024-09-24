@@ -2,7 +2,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 
-GPT_MODEL = 'gpt-4o'
+GPT_MODEL = 'gpt-4o-mini'
 EMBEDDING_MODEL = 'text-embedding-3-small'
 DIMENSION = 768
 
