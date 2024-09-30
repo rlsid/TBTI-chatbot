@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient
 
-URI = 'http://54.180.163.147:19530'
+URI = 'http://ip:19530'
 
 class MilvusDB:
     def __init__(self, uri=URI):
@@ -48,7 +48,7 @@ class MilvusDB:
             filter=f"{filtering}",
             anns_field="embedding",
             search_params=search_params,
-            output_fields=["id", "text", "reservation", "place_name", "category"],
+            output_fields=["id", "text", "place_name", "category"],
             limit=top_k
         )
         return results

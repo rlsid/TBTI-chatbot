@@ -12,7 +12,7 @@ from agent_executor import create_my_agent
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = "key"
-os.environ["LANGCHAIN_PROJECT"] = "project_name"
+os.environ["LANGCHAIN_PROJECT"] = "TBTI_test3"
 
 class QuestionRequest(BaseModel):
     question: str
