@@ -7,7 +7,7 @@ from openAI_api import embedding
 @tool
 def recommand_travel_destination(question : str, location : str, area : str) -> str:
     """
-    gives information on various places that user wants to know or to travel
+    give information on various places that user wants to know or to travel
     It doesn't work when user told to plan the trip and when user told to reserve the place.
 
     Args:
@@ -54,7 +54,7 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
 
 
 @tool
-def create_travel_plan(question : str, location : str, area : str, duration : str) -> str:
+def create_travel_plan(question : str, location : str, area : str, duration : str) -> json:
     """
     works when the user wants to plan a trip
 
@@ -95,4 +95,53 @@ def create_travel_plan(question : str, location : str, area : str, duration : st
     return {"answer": llm_response, "place" : None}
 
 
-callable_tools = [recommand_travel_destination, create_travel_plan]
+@tool
+def search_specific_place(question : str, place_name : str) -> json:
+    """
+    give the information of a specific place mentioned by the user.
+    It works when a user wants to get information about a particular place or wants to make a reservation.
+
+    Args:
+        question: input the user's question as it is
+        place_name: The name of the particular place that user wants to know or to reserve
+    """
+
+    milvus = database
+    vector = embedding(question)
+
+    # filtering 생성
+    filtering = ''
+    if place_name:
+        place_name = place_name.replace(' ', '')
+        char = f"%{place_name[0:2]}%"
+        filtering = f"place_name like '{char}'"
+
+    # 쿼리 진행
+    results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=filtering, top_k=3)
+    total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)
+
+    # 결과 참고해서 LLM 답변 생성
+    messages = [
+        {"role": "user", "content":f"사용자 질문: {question} \n reference: {total_results}" }
+    ]
+
+    system_prompt = """
+    - Use the information from the reference and do not use the information you know. If you don't have any reference materials, tell them you don't know
+    - give the information about a specific location that user wants to find by json object of the following format. 
+    - JSON objects must have the following structure:
+    {"answer": "put a short sentence that tells user a particular place. If you don't know about the place mentioned, tell them you don't know", 
+     "place": [{"place_name": "The name of the place", "description": "A brief description of the place. make by using the keywords of the place", "redirection_url": "A URL for more information about the place"},...]}
+    - The answer is in Korean
+    """
+
+    messages.append({"role":"system", "content": f"{system_prompt}"})
+
+    llm_response = chat_completion_request(
+        messages=messages,
+        response_format={"type":"json_object"}
+    ).choices[0].message.content
+    
+    return llm_response
+    
+
+callable_tools = [recommand_travel_destination, create_travel_plan, search_specific_place]
