@@ -7,7 +7,7 @@ from openAI_api import embedding
 @tool
 def recommand_travel_destination(question : str, location : str, area : str) -> str:
     """
-    give information on various places that user wants to know or to travel
+    gives information on various places that user wants to know or to travel
     It doesn't work when user told to plan the trip and when user told to reserve the place.
 
     Args:
@@ -41,6 +41,7 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
     {"answer": "put a short sentence that recommand the places", "place": [{"place_name": "The name of the place", "description": "A brief description of the place. make by using the keywords of the place", "redirection_url": "A URL for more information about the place"},...]}
     - Please recommend up to five attractions according to this format.
     - The answer is in Korean
+    - If the user asks a question about the amount, please include the amount information in the answer.
     """
     messages.append({"role":"system", "content": f"{system_prompt}"})
 
@@ -54,12 +55,12 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
 
 
 @tool
-def create_travel_plan(question : str, location : str, area : str, duration : str) -> json:
+def create_travel_plan(question : str, location : str, area : str, duration : str) -> str:
     """
     works when the user wants to plan a trip
 
     Args:
-        question: input the user's question as it is
+        question: identify the travel user wants and input the question
         location: The city of Korean, e.g. 서울 or 부산 or 대구
         area: Enter only the following words to indicate where the place in the user's question belongs to the following Korean administrative districts. e.g. 강원특별자치도 
               - 한국 행정 구역 : 서울특별시, 부산광역시, 인천광역시, 대구광역시, 대전광역시, 광주광역시, 울산광역시, 세종특별자치시, 경기도, 충청북도, 충청남도, 전라남도, 경상북도, 경상남도, 강원특별자치도, 전북특별자치도, 제주특별자치도
@@ -84,10 +85,12 @@ def create_travel_plan(question : str, location : str, area : str, duration : st
     system_prompt = """
     When you plan your trip, you must meet the following conditions.
     1. We recommend places to visit for each date. At this time, the number of places to recommend for each date should be three.
-    2. The distance between the places you visit on the same date must be within 10KM.
+    2. The distance between each destination must be within 10 km, even if it is not on the same day.
     3. The recommended places across all dates should not overlap.
     4. Place categories on one date must not overlap and must vary.
     5. Each place must have a place name, location, and description made by using the keywords of the place.
+    6. Don't go to destinations in the accommodation category on the last day.
+    7. If the user asks a question about the amount, please include the amount information in the answer
     """
     messages.append({"role": "system", "content": system_prompt})
     llm_response = chat_completion_request(messages).choices[0].message.content
@@ -102,7 +105,7 @@ def search_specific_place(question : str, place_name : str) -> json:
     It works when a user wants to get information about a particular place or wants to make a reservation.
 
     Args:
-        question: input the user's question as it is
+        question: identify the travel user wants and input the question
         place_name: The name of the particular place that user wants to know or to reserve
     """
 
