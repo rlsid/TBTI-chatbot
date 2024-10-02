@@ -11,8 +11,8 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
     It doesn't work when user told to plan the trip and when user told to reserve the place.
 
     Args:
-        question: input the user's question as it is
-        location: The area of Korea, e.g. 서울 or 부산 or 대구
+        question: identify the travel user wants and input the question 
+        location: input the area of Korea to travel, e.g. 서울 or 부산 or 대구
         area: Enter only the following words to indicate where the place in the user's question belongs to the following Korean administrative districts. e.g. 강원특별자치도 
               - 한국 행정 구역 : 서울특별시, 부산광역시, 인천광역시, 대구광역시, 대전광역시, 광주광역시, 울산광역시, 세종특별자치시, 경기도, 충청북도, 충청남도, 전라남도, 경상북도, 경상남도, 강원특별자치도, 전북특별자치도, 제주특별자치도
     """
@@ -55,13 +55,13 @@ def recommand_travel_destination(question : str, location : str, area : str) -> 
 
 
 @tool
-def create_travel_plan(question : str, location : str, area : str, duration : str) -> str:
+def create_travel_plan(question : str, location : str, area : str, duration : str) -> json:
     """
     works when the user wants to plan a trip
 
     Args:
         question: identify the travel user wants and input the question
-        location: The city of Korean, e.g. 서울 or 부산 or 대구
+        location: input the area of Korea to travel, e.g. 서울 or 부산 or 대구
         area: Enter only the following words to indicate where the place in the user's question belongs to the following Korean administrative districts. e.g. 강원특별자치도 
               - 한국 행정 구역 : 서울특별시, 부산광역시, 인천광역시, 대구광역시, 대전광역시, 광주광역시, 울산광역시, 세종특별자치시, 경기도, 충청북도, 충청남도, 전라남도, 경상북도, 경상남도, 강원특별자치도, 전북특별자치도, 제주특별자치도
         duration: the duration of the travel plans, If the user does not specify the duration of the trip, you should ask specifically about the duration of the trip. e.g. 하루, 1박 2일, 2박 3일
