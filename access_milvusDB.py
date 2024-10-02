@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient
 
-URI = 'http://ip:19530'
+URI = 'http://ip주소:19530'
 
 class MilvusDB:
     def __init__(self, uri=URI):
@@ -41,7 +41,7 @@ class MilvusDB:
 
     # 단일 테이블 검색 함수
     def search_table(self, table_name, embedding, filtering, top_k):
-        search_params = {"metric_type": "IP", "params": {}}
+        search_params = {"metric_type": "COSINE", "params": {}}
         results = self.client.search(
             collection_name=table_name,
             data=[embedding],
@@ -54,7 +54,7 @@ class MilvusDB:
         return results
     
     # 여러 테이블 검색 함수
-    def search_all_tables(self, embedding, filtering, top_k=10):
+    def search_all_tables(self, embedding, filtering, top_k=7):
         results_localCreator = self.search_table('kstartup_travel_sites', embedding, filtering, top_k)
         results_nowLocal = self.search_table('nowlocal_travel_sites', embedding, filtering, top_k)
 
