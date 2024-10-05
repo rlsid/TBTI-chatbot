@@ -2,7 +2,7 @@ from langchain_openai import ChatOpenAI
 from sentence_transformers import SentenceTransformer
 from openai import OpenAI
 
-GPT_MODEL = 'gpt-4o-mini'
+GPT_MODEL = 'gpt-4o'
 EMBEDDING_MODEL = 'upskyy/bge-m3-korean'
 
 client = OpenAI()

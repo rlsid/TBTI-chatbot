@@ -1,8 +1,8 @@
 from pymilvus import MilvusClient
 
-URI = 'http://ip주소:19530'
+URI = 'http://ip:19530'
 
-class MilvusDB:
+class MilvusDB: 
     def __init__(self, uri=URI):
         self.uri = uri
         self.client = self.connect()
@@ -80,9 +80,9 @@ class MilvusDB:
             
             length = len(result)
             for num in range(length):
-                text = f"- {result[num]['entity']['text']}"
-                text += f"상세페이지: 'http://localhost:3000/detail/{result[num]['entity']['id']}'"
-                formatted_results += text + "\n"
+                text = f"{result[num]['entity']['text']}"
+                text += f"\n상세페이지: 'http://localhost:3000/detail/{result[num]['entity']['id']}'"
+                formatted_results += text + "\n\n"
             
         return formatted_results
     
