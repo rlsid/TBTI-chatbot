@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient
 
-URI = 'http://ip:19530'
+URI = 'http://ip:port'
 
 class MilvusDB: 
     def __init__(self, uri=URI):

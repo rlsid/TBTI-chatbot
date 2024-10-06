@@ -1,5 +1,4 @@
 import os
-import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict
@@ -10,9 +9,10 @@ from access_milvusDB import database
 from available_functions import callable_tools
 from agent_executor import create_my_agent
 
+
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "langchain api key"
-os.environ["LANGCHAIN_PROJECT"] = "TBTI_test3"
+os.environ["LANGCHAIN_API_KEY"] = "key"
+os.environ["LANGCHAIN_PROJECT"] = "test name"
 
 class QuestionRequest(BaseModel):
     question: str
@@ -51,11 +51,9 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = agent.invoke({"messages": [("human", f"{question}")]}, config)['final_response']
-        response = response.strip("'<>() ").replace('\'', '\"').replace('None', 'null')
-        
-        # json 문자열 json으로 역직렬화
-        ai_answer = json.loads(response)
-        return ai_answer
+        print(response)
+
+        return response
     
     except Exception as e:
         print("에러 발생: ", e)

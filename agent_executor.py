@@ -1,3 +1,4 @@
+import json
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langchain_core.tools import BaseTool
@@ -17,15 +18,23 @@ from typing import (
     Union, 
     Sequence
 ) 
-
+    
 # 노드에 전달되는 state
 class AgentState(TypedDict):
     # 사용자에게 전달되는 최종 메시지
-    final_response : str
+    final_response : dict
     # 대화 history 전달
     messages : Annotated[list, add_messages]
 
-
+def escape_json_strings(response):
+    try:
+        # JSON 문자열을 딕셔너리 자료형으로 변환
+        response_str = json.loads(response)
+        return response_str
+    except Exception as e:
+        print(f"Error escaping JSON strings: {e}")
+        return response
+    
 def create_my_agent(
     model: LanguageModelLike,
     tools: Union[ToolExecutor, Sequence[BaseTool], ToolNode],
@@ -42,9 +51,10 @@ def create_my_agent(
     def call_model(state: AgentState):
         response = model_with_tools.invoke(state['messages'])
         final_response = response.content
+        final_response = final_response.strip("<>() ").replace('\"', '\'')
         
         # AI 답변을 json 형식으로 만들어 final_response에 저장 / 답변 history에 저장 
-        return {"final_response" :  str({"answer": final_response, "place": None}), "messages" : [response]}
+        return {"final_response" :  {"answer": final_response, "place": None}, "messages" : [response]}
 
     # 도구 작동 후 함수 결과 LLM에게 최종 전달 후 답변 생성
     def respond_after_calling_tools(state: AgentState):
@@ -61,7 +71,8 @@ def create_my_agent(
 
         # 작동된 도구에 맞는 시스템 프롬프트 가져오기
         system_prompt = configuration_for_answers[name_of_functions_called]['system_prompt']
-        
+        response_format = configuration_for_answers[name_of_functions_called]['response_format']
+
         # 결과 참고해서 LLM 답변 생성
         messages = [
             {"role":"system", "content": f"{system_prompt}"},
@@ -70,10 +81,12 @@ def create_my_agent(
         
         llm_response = chat_completion_request(
             messages=messages,
-            response_format={"type":"json_object"}
-        ).choices[0].message.content
-    
-        return {"final_response": llm_response}
+            response_format=response_format
+        ).choices[0].message.content   
+
+        escaped_response = escape_json_strings(llm_response)
+
+        return {"final_response": escaped_response}
     
     # Define the function that determines whether to continue or not
     def should_continue(state: AgentState):
