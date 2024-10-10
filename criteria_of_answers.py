@@ -25,6 +25,10 @@ system_informations_of_functions = {
 3. The recommended places across all dates should not overlap.
 4. Place categories on one date must not overlap and must vary. Don't include accommodation category on the last day.
 5. Each place must have a place name, location, a short description made by using the keywords of the place.
+ex. Please let the user know the information about the place as follows.
+place name: haneul cafe \n
+location: 경기도 안양시 하늘1동 \n
+description: 따뜻한 분위기의 이쁜 카페 
 6. Let me know the estimated total amount of consumption.
 """
     },

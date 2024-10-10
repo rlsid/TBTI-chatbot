@@ -11,8 +11,8 @@ from agent_executor import create_my_agent
 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "key"
-os.environ["LANGCHAIN_PROJECT"] = "test name"
+os.environ["LANGCHAIN_API_KEY"] = "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"
+os.environ["LANGCHAIN_PROJECT"] = "TBTI_test3"
 
 class QuestionRequest(BaseModel):
     question: str
@@ -48,9 +48,25 @@ async def ask_ai(request: QuestionRequest):
 
     try:
         db.reconnect()
+        
+        system_prompt = """
+        - You are a tour guide called 'TBTI'. Ask the user a short and clear question.
+        - If users request new information other than previous information, you don't use previously known information
+        ex. user: 'Tell me the new destination, not the information you told me.'
+        
+        - Just ask once what kind of trip the user wants.
+        ex. Is there anything you want when you travel?
+
+        - Only up to five locations will be notified.
+        - If the user wants specific information about multiple locations, it will only tell you the information of the previously recommended location.
+        ex. Can you tell me where Wi-Fi is available among the places you told me?
+        """
+
+        messages_list = [("system", f"{system_prompt}")] 
+        messages_list.append(("human", f"{question}"))
 
         # 에이전트 실행
-        response = agent.invoke({"messages": [("human", f"{question}")]}, config)['final_response']
+        response = agent.invoke({"messages": messages_list}, config)['final_response']
         print(response)
 
         return response
