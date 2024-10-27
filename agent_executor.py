@@ -21,16 +21,20 @@ from typing import (
     
 # 노드에 전달되는 state
 class AgentState(TypedDict):
+    # 이전 단계에서의 결과값 저장
+    previous_result : str
+    
     # 사용자에게 전달되는 최종 메시지
     final_response : dict
+    
     # 대화 history 전달
     messages : Annotated[list, add_messages]
 
 def escape_json_strings(response):
     try:
         # JSON 문자열을 딕셔너리 자료형으로 변환
-        response_str = json.loads(response)
-        return response_str
+        response_dict = json.loads(response)
+        return response_dict
     except Exception as e:
         print(f"Error escaping JSON strings: {e}")
         return response
@@ -47,14 +51,14 @@ def create_my_agent(
     # 함수 호출 도구 사용할 수 있는 모델 생성
     model_with_tools = model.bind_tools(tools)
 
-    # 사용할 AI 모델 로드
+    # 사용할 AI 모델 로드 및 AI 답변 처리
     def call_model(state: AgentState):
         response = model_with_tools.invoke(state['messages'])
-        final_response = response.content
-        final_response = final_response.strip("<>() ").replace('\"', '\'')
-        
-        # AI 답변을 json 형식으로 만들어 final_response에 저장 / 답변 history에 저장 
-        return {"final_response" :  {"answer": final_response, "place": None}, "messages" : [response]}
+        last_response = response.content.strip("<>() ").replace('\"', '\'')
+        last_response = f'{{\"answer\": \"{last_response}\", \"place\": null}}'
+
+        # AI 답변을 json 형식의 문자열로 만들어 previous_result에 저장 / 답변 history에 저장 
+        return {"previous_result" : last_response , "messages" : [response]}
 
     # 도구 작동 후 함수 결과 LLM에게 최종 전달 후 답변 생성
     def respond_after_calling_tools(state: AgentState):
@@ -84,9 +88,7 @@ def create_my_agent(
             response_format=response_format
         ).choices[0].message.content   
 
-        escaped_response = escape_json_strings(llm_response)
-
-        return {"final_response": escaped_response}
+        return {"previous_result": llm_response}
     
     # Define the function that determines whether to continue or not
     def should_continue(state: AgentState):
@@ -100,7 +102,12 @@ def create_my_agent(
         else:
             return "work"
 
+    def post_processing_of_answer(state: AgentState):
+        ai_answer = state["previous_result"]
+        escaped_response = escape_json_strings(ai_answer)
+        return {"final_response" : escaped_response}
 
+        
     # 새로운 그래프 정의
     workflow = StateGraph(AgentState)
 
@@ -108,6 +115,7 @@ def create_my_agent(
     workflow.add_node("agent", call_model)
     workflow.add_node("tools", ToolNode(tools))
     workflow.add_node("respond", respond_after_calling_tools)
+    workflow.add_node("json-processing", post_processing_of_answer)
 
     # Set the entrypoint as `agent`
     # This means that this node is the first one called
@@ -119,12 +127,13 @@ def create_my_agent(
         should_continue,
         {
             "work": "tools",
-            "pass": END,
+            "pass": "json-processing",
         },
     )
     
     workflow.add_edge("tools", "respond")
-    workflow.add_edge("respond", END)
+    workflow.add_edge("respond", "json-processing")
+    workflow.add_edge("json-processing", END)
 
     graph = workflow.compile(
         checkpointer=checkpointer

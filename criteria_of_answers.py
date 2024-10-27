@@ -23,12 +23,8 @@ system_informations_of_functions = {
 1. We recommend places to visit for each date. At this time, the number of places to recommend for each date should be three.
 2. The distance between each destination must be within 10 km, even if it is not on the same day.
 3. The recommended places across all dates should not overlap.
-4. Place categories on one date must not overlap and must vary. Don't include accommodation category on the last day.
-5. Each place must have a place name, location, a short description made by using the keywords of the place.
-ex. Please let the user know the information about the place as follows.
-place name: haneul cafe \n
-location: 경기도 안양시 하늘1동 \n
-description: 따뜻한 분위기의 이쁜 카페 
+4. The categories of the place on one date must not overlap and must vary. Don't include accommodation category on the last day.
+5. Each place must have a place name, location, a short description of the place. 
 6. Let me know the estimated total amount of consumption.
 """
     },

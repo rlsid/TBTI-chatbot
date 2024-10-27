@@ -10,9 +10,9 @@ from available_functions import callable_tools
 from agent_executor import create_my_agent
 
 
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "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"
-os.environ["LANGCHAIN_PROJECT"] = "TBTI_test3"
+#os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "api key"
+os.environ["LANGCHAIN_PROJECT"] = "test name"
 
 class QuestionRequest(BaseModel):
     question: str
@@ -38,7 +38,7 @@ agent = create_my_agent(
     checkpointer=memory
 )
 
-config = {"configurable": {"thread_id": "test-thread2"}}    
+config = {"configurable": {"thread_id": "test-thread1"}}    
 
 db = database
 
@@ -67,7 +67,7 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = agent.invoke({"messages": messages_list}, config)['final_response']
-        print(response)
+        #print(response)
 
         return response
     
