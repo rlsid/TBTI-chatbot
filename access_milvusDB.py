@@ -48,7 +48,7 @@ class MilvusDB:
             filter=f"{filtering}",
             anns_field="embedding",
             search_params=search_params,
-            output_fields=["id", "text", "place_name", "category"],
+            output_fields=["id", "text", "place_name"],
             limit=top_k
         )
         return results

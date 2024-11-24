@@ -2,7 +2,6 @@ from response_formats import response_format_1
 from response_formats import response_format_2
 
 system_informations_of_functions = {
-
     "recommand_travel_destination" : {
         "response_format" : response_format_2,
         "system_prompt" : """
