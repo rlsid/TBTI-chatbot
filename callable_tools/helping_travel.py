@@ -35,7 +35,7 @@ def recommand_travel_destination(question : str, location : str, area : str, fil
     else:
         milvus_filter = area_filter
     
-    results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=milvus_filter)
+    results_localCreator, results_nowLocal = milvus.search_all_tables(embedding=vector, filtering=milvus_filter, top_k=5)
 
     # 쿼리 결과 합치기
     total_results = milvus.get_formatted_results(results_localCreator, results_nowLocal)

@@ -42,12 +42,14 @@ agent = create_my_agent(
 
 config = {"configurable": {"thread_id": "test"}}    
 
+
+
 # 이전 state 값 저장
 previous_state = {
     "messages" : None,
     "previous_result" : None,
     "final_response" : None,
-    "tbti_of_user" : "ASFU",
+    "tbti_of_user" : None,
     "filtering" : None,
     "name_of_tools": None,
     "model_with_tools" : llm.bind_tools(tools)
@@ -58,16 +60,21 @@ db = database
 
 @app.post("/ask-ai/", response_model=AiResponse)
 async def ask_ai(request: QuestionRequest):
-    question = request.question  # JSON에서 question 필드 추출
+    question = request.userMessage  # JSON에서 question 필드 추출
+    userId = request.userId
+    tbtiType = request.tbtiType
 
     try:
         db.reconnect()
         
+        # TBTI 유형 저장
+        previous_state["tbti_of_user"] = tbtiType   
+
+        # 사용자 메시지 포함
         system_prompt = """
         - You are a tour guide called 'TBTI'. Ask the user a short and clear question.
         - Only up to five locations will be notified.
-        - If users request new information other than previous information, you don't use previously known information
-        ex. user: 'Tell me the new destination, not the information you told me.'
+        - 
         """
 
         messages_list = [("system", f"{system_prompt}")] 
