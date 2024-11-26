@@ -36,7 +36,6 @@ class AgentState(TypedDict):
     final_response : Optional[dict]                    # 사용자에게 전달되는 최종 메시지 
     tbti_of_user : Optional[str]             # 사용자 TBTI  
     filtering : Optional[dict]               # DB 검색 필터
-    name_of_tools: list
     
 def escape_json_strings(response):
     try:
@@ -55,7 +54,8 @@ def create_my_agent(
     
     # LLM 시스템 프롬프트 리스트 로드 - 작동되는 함수에 따라 시스템 프롬프트 내용 다름
     configuration_for_answers = system_informations_of_functions
-    # 사용할 수 있는 모델 로드
+    
+    # 도구 호출 가능한 모델 로드
     model_with_tools = model.bind_tools(tools)
 
     # 첫 노드가 필요해서 만듦
@@ -77,7 +77,7 @@ def create_my_agent(
     # 새로운 검색 필터 생성 노드
     def generate_new_filter(state: AgentState):
         filtering = {}
-        available_tools = []
+        system_prompt = []
 
         # 사용자 여행 유형 가져오기
         tbti = state['tbti_of_user']
@@ -85,7 +85,7 @@ def create_my_agent(
             if tbti not in ['AIEU', 'AIEP', 'AIFU', 'AIFP', 'ASEU', 'ASEP', 'ASFU', 'ASFP', 'CIEU', 'CIEP', 'CIFU', 'CIFP', 'CSEU', 'CSEP', 'CSFU', 'CSFP']:
                 raise Exception("전달받은 TBTI 유형이 존재하지 않습니다.")
 
-            # 여행 유형에 따른 검색 필터 및 호출시킬 도구 준비
+            # 여행 유형에 따른 검색 필터 및 추가 질문 준비
             tbti = list(tbti)
             for one_type in tbti:
                 match one_type:
@@ -94,14 +94,14 @@ def create_my_agent(
                     case 'C':
                         filtering["mood"] = "(mood == 1)"
                     case 'I':
-                        available_tools.append("check_companion_animal")
+                        system_prompt.append(tools_of_type['check_companion_animal']["added_system_message"])
                     case 'P':
                         pass
                     case 'S':
-                        available_tools.append("check_child")
-                        available_tools.append("check_companion_animal")
+                        system_prompt.append(tools_of_type['check_child']["added_system_message"])
+                        system_prompt.append(tools_of_type['check_companion_animal']["added_system_message"])
                     case 'E':
-                        available_tools.append("check_distance")
+                        system_prompt.append(tools_of_type['check_distance']["added_system_message"])
                     case 'F':
                         filtering["parking"] = "(parking == true)"
                     case 'U':
@@ -110,9 +110,14 @@ def create_my_agent(
         except Exception as e:
             print(e, " 올바른 TBTI 유형을 전달하세요.")
 
-        return {"filtering": filtering, "name_of_tools": available_tools}
-    
+        added_system_msg = ' '.join(system_prompt)
+        messages = [
+            ("system", f"{added_system_msg}")
+        ]
 
+        return {"filtering": filtering, "messages": messages}
+    
+    '''
     # 여행 유형에 맞는 추가 질문이 가능한 모델 만들기
     def make_model_with_tools(state: AgentState):
         name_of_tools = state["name_of_tools"]
@@ -128,7 +133,7 @@ def create_my_agent(
         ]
 
         return {"messages": messages}
-    
+    '''
     # 사용할 AI 모델 로드 및 AI 답변 처리
     def talk_to_model(state: AgentState):
         response = model_with_tools.invoke(state['messages'])
@@ -156,7 +161,7 @@ def create_my_agent(
         ai_message = filter_messages(messages, include_types=[AIMessage])[-1]
         tool_call_ids = [item['id'] for item in ai_message.tool_calls]
 
-        # tool_message 가져오기
+        # 이전 실행된 tool 결과 가져오기
         tool_messages =  filter_messages(messages, include_types=[ToolMessage], include_ids=tool_call_ids)
         for tool in tool_messages:
             content = tool.content
@@ -222,7 +227,6 @@ def create_my_agent(
     # 각 노드 생성
     workflow.add_node("start-node", save_user_info)
     workflow.add_node("generate-filter", generate_new_filter)
-    workflow.add_node("make-model", make_model_with_tools)
     workflow.add_node("talk-to-human", talk_to_model)
     workflow.add_node("tools", ToolNode(tools))
     workflow.add_node("add-filter", process_type_result)
@@ -241,8 +245,7 @@ def create_my_agent(
         },
     )
     
-    workflow.add_edge("generate-filter", "make-model")
-    workflow.add_edge("make-model", "talk-to-human")
+    workflow.add_edge("generate-filter", "talk-to-human")
 
     workflow.add_conditional_edges(
         "talk-to-human",

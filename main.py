@@ -21,7 +21,7 @@ from typing import (
 ) 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "api key"
+os.environ["LANGCHAIN_API_KEY"] = "key"
 os.environ["LANGCHAIN_PROJECT"] = "test"
 
 # 사용자별 메모리 저장용 딕셔너리
@@ -71,8 +71,7 @@ previous_state = {
     "previous_result" : None,
     "final_response" : None,
     "tbti_of_user" : None,
-    "filtering" : {},
-    "name_of_list" : []
+    "filtering" : {}
 }
 
 db = database
@@ -108,7 +107,7 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = user_agent.invoke(previous_state, config)
-        print(response['final_response'])
+        print(response)
         previous_state = response
 
         # JSON 직렬화 시 SecretStr 값 처리
