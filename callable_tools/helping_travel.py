@@ -4,9 +4,10 @@ from langgraph.prebuilt import InjectedState
 from typing import Annotated
 from access_milvusDB import database
 from openAI_api import embedding
+from typing import Optional
 
 @tool
-def recommand_travel_destination(question : str, location : str, area : str, filtering: Annotated[dict, InjectedState('filtering')]) -> str:
+def recommand_travel_destination(question : str, location : str, area : str, filtering: Annotated[Optional[dict], InjectedState('filtering')]) -> str:
     """
     recommand the various places that user wants to know or to travel
     It only works when user wants to know the various places.
@@ -44,7 +45,7 @@ def recommand_travel_destination(question : str, location : str, area : str, fil
 
 
 @tool
-def create_travel_plan(question : str, location : str, area : str, duration : str, filtering: Annotated[dict, InjectedState('filtering')]) -> json:
+def create_travel_plan(question : str, location : str, area : str, duration : str, filtering: Annotated[Optional[dict], InjectedState('filtering')]) -> json:
     """
     works when the user wants to plan a trip
 

@@ -71,7 +71,7 @@ previous_state = {
     "final_response" : None,
     "tbti_of_user" : None,
     "filtering" : None,
-    "name_of_tools": None,
+    "name_of_tools": [],
 }
 
 db = database
