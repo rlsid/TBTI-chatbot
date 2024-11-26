@@ -76,8 +76,10 @@ def create_my_agent(
     
     # 새로운 검색 필터 생성 노드
     def generate_new_filter(state: AgentState):
+        messages = state["messages"]
         filtering = {}
         system_prompt = ['Ask a question in Korean one by one.']
+
 
         # 사용자 여행 유형 가져오기
         tbti = state['tbti_of_user']
@@ -114,7 +116,7 @@ def create_my_agent(
         messages = [
             ("system", f"{added_system_msg}")
         ]
-
+        
         return {"filtering": filtering, "messages": messages}
     
     # 사용할 AI 모델 로드 및 AI 답변 처리
@@ -139,6 +141,10 @@ def create_my_agent(
     # 여행 취향을 파악하기 위한 추가 질문 답변 처리
     def process_type_result(state: AgentState):
         filtering = state["filtering"]
+        
+        if filtering == None:
+            filtering = {}
+        
         messages = state["messages"]
         
         ai_message = filter_messages(messages, include_types=[AIMessage])[-1]
