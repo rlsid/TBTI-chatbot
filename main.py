@@ -72,7 +72,7 @@ previous_state = {
     "previous_result" : None,
     "final_response" : None,
     "tbti_of_user" : None,
-    "filtering" : None
+    "filtering" : {}
 }
 
 db = database
@@ -108,7 +108,7 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = user_agent.invoke(previous_state, config)
-        print(response)
+        print(response['final_response'])
         previous_state = response
 
         # JSON 직렬화 시 SecretStr 값 처리

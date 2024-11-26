@@ -21,7 +21,7 @@ system_informations_of_functions = {
 1. We recommend places to visit for each date. At this time, the number of places to recommend for each date should be three.
 2. The distance between each destination must be within 10 km, even if it is not on the same day.
 3. The categories of the place on one date must not overlap and must vary. Don't include accommodation category on the last day.
-4. Each place must have a place name, location, a short description of the place. 
+4. Each place must have a place name, location, a short description of the place. Express each element separately by line modulation.
 5. Let me know the estimated total amount of consumption.
 """
     },

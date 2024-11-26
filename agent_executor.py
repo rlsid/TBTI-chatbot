@@ -8,16 +8,11 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph.message import add_messages
 
 from langchain_core.language_models import LanguageModelLike
-from langchain_core.runnables.base import Runnable
-from langchain_core.prompt_values import PromptValue
-from langchain_core.messages.base import BaseMessage
 from langchain_core.messages import filter_messages, ToolMessage, AIMessage
 
-from openAI_api import llm
 from criteria_of_answers import system_informations_of_functions
 from openAI_api import chat_completion_request
 from callable_tools.identifying_type import tools_of_type
-from callable_tools.helping_travel import tools_of_travel
 
 from typing import (
     Optional, 
@@ -39,8 +34,8 @@ class AgentState(TypedDict):
     
 def escape_json_strings(response):
     try:
-        # JSON 문자열을 딕셔너리 자료형으로 변환
-        response_dict = json.loads(response)
+        # JSON 문자열을 딕셔너리 자료형으로 변환 (strict=False로 하면 \n 문자 JSON에 허용)
+        response_dict = json.loads(response, strict=False)
         return response_dict
     except Exception as e:
         print(f"Error escaping JSON strings: {e}")
@@ -67,9 +62,9 @@ def create_my_agent(
         filtering = state['filtering']
         tbti = state['tbti_of_user']
 
-        if filtering != None and tbti != None:
+        if len(filtering) > 0:
             return "start talking"
-        elif filtering == None and tbti != None:
+        elif len(filtering) == 0 and tbti != None:
             return "create filter"
         else:
             return "start talking"
@@ -80,34 +75,34 @@ def create_my_agent(
         filtering = {}
         system_prompt = ['Ask a question in Korean one by one.']
 
-
         # 사용자 여행 유형 가져오기
         tbti = state['tbti_of_user']
         try:
-            if tbti not in ['AIEU', 'AIEP', 'AIFU', 'AIFP', 'ASEU', 'ASEP', 'ASFU', 'ASFP', 'CIEU', 'CIEP', 'CIFU', 'CIFP', 'CSEU', 'CSEP', 'CSFU', 'CSFP']:
-                raise Exception("전달받은 TBTI 유형이 존재하지 않습니다.")
-
-            # 여행 유형에 따른 검색 필터 및 추가 질문 준비
-            tbti = list(tbti)
-            for one_type in tbti:
-                match one_type:
-                    case 'A':
-                        filtering["mood"] = "(mood == 0)"
-                    case 'C':
-                        filtering["mood"] = "(mood == 1)"
-                    case 'I':
-                        system_prompt.append(tools_of_type['check_companion_animal']["added_system_message"])
-                    case 'P':
-                        pass
-                    case 'S':
-                        system_prompt.append(tools_of_type['check_child']["added_system_message"])
-                        system_prompt.append(tools_of_type['check_companion_animal']["added_system_message"])
-                    case 'E':
-                        system_prompt.append(tools_of_type['check_distance']["added_system_message"])
-                    case 'F':
-                        filtering["parking"] = "(parking == true)"
-                    case 'U':
-                        filtering["reservation"] = "(reservation == true)"
+            if tbti not in ['AIEU', 'AIEP', 'AIFU', 'AIFP', 'ASEU', 'ASEP', 'ASFU', 'ASFP', 'CIEU', 'CIEP', 'CIFU', 'CIFP', 'CSEU', 'CSEP', 'CSFU', 'CSFP'] and tbti == None:
+                return {"filtering": filtering, "messages": messages}
+                
+            else:
+                # 여행 유형에 따른 검색 필터 및 추가 질문 준비
+                tbti = list(tbti)
+                for one_type in tbti:
+                    match one_type:
+                        case 'A':
+                            filtering["mood"] = "(mood == 0)"
+                        case 'C':
+                            filtering["mood"] = "(mood == 1)"
+                        case 'I':
+                            system_prompt.append(tools_of_type['check_companion_animal']["added_system_message"])
+                        case 'P':
+                            pass
+                        case 'S':
+                            system_prompt.append(tools_of_type['check_child']["added_system_message"])
+                            system_prompt.append(tools_of_type['check_companion_animal']["added_system_message"])
+                        case 'E':
+                            system_prompt.append(tools_of_type['check_distance']["added_system_message"])
+                        case 'F':
+                            filtering["parking"] = "(parking == true)"
+                        case 'U':
+                            filtering["reservation"] = "(reservation == true)"
 
         except Exception as e:
             print(e, " 올바른 TBTI 유형을 전달하세요.")
@@ -140,11 +135,7 @@ def create_my_agent(
     
     # 여행 취향을 파악하기 위한 추가 질문 답변 처리
     def process_type_result(state: AgentState):
-        filtering = state["filtering"]
-        
-        if filtering == None:
-            filtering = {}
-        
+        filtering = state["filtering"]     
         messages = state["messages"]
         
         ai_message = filter_messages(messages, include_types=[AIMessage])[-1]
@@ -159,7 +150,6 @@ def create_my_agent(
                 print(split_result)
                 filtering[split_result[0]] = split_result[1]
 
-        print(filtering)
         return {"filtering": filtering}
 
     # 도구 작동 후 함수 결과 LLM에게 최종 전달 후 답변 생성
