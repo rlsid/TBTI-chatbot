@@ -36,9 +36,8 @@ class AgentState(TypedDict):
     final_response : Optional[dict]                    # 사용자에게 전달되는 최종 메시지 
     tbti_of_user : Optional[str]             # 사용자 TBTI  
     filtering : Optional[dict]               # DB 검색 필터
-    name_of_tools : Optional[List[str]]      # 유형에 따라 호출할 추가 도구 리스트
-    model_with_tools : Runnable[PromptValue | str | Sequence[BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]], BaseMessage] # 도구 호출 가능한 모델 
-
+    name_of_tools: list
+    
 def escape_json_strings(response):
     try:
         # JSON 문자열을 딕셔너리 자료형으로 변환
@@ -57,7 +56,7 @@ def create_my_agent(
     # LLM 시스템 프롬프트 리스트 로드 - 작동되는 함수에 따라 시스템 프롬프트 내용 다름
     configuration_for_answers = system_informations_of_functions
     # 사용할 수 있는 모델 로드
-    model = llm
+    model_with_tools = model.bind_tools(tools)
 
     # 첫 노드가 필요해서 만듦
     def save_user_info(state: AgentState):
@@ -120,9 +119,7 @@ def create_my_agent(
         system_message = 'Ask a question in Korean one by one.'
 
         # 호출할 추가 도구 리스트 및 질문 가져오기
-        tools = tools_of_travel
         for name in name_of_tools:
-            tools.append(tools_of_type[name]["func"])
             added_msg = tools_of_type[name]["added_system_message"] + ' '
             system_message = system_message + added_msg
 
@@ -130,14 +127,10 @@ def create_my_agent(
             ("system", f"{system_message}")
         ]
 
-        # 호출 가능한 모델 생성
-        model_with_tools = model.bind_tools(tools)
-
-        return {"model_with_tools": model_with_tools, "messages": messages}
+        return {"messages": messages}
     
     # 사용할 AI 모델 로드 및 AI 답변 처리
     def talk_to_model(state: AgentState):
-        model_with_tools = state['model_with_tools']
         response = model_with_tools.invoke(state['messages'])
         last_response = response.content.strip("<>() ").replace('\"', '\'')
         last_response = f'{{\"answer\": \"{last_response}\", \"place\": null}}'
@@ -147,7 +140,7 @@ def create_my_agent(
 
     # 검색 필터를 추가할 지, 검색 결과를 통한 답변을 생성할 지 파악
     def should_make_answer(state: AgentState):
-        name_of_tools = state["name_of_tools"]
+        name_of_tools = tools_of_type.keys()
         tool_messages = state["messages"][-1]
 
         if tool_messages.name in name_of_tools:
@@ -163,11 +156,13 @@ def create_my_agent(
         ai_message = filter_messages(messages, include_types=[AIMessage])[-1]
         tool_call_ids = [item['id'] for item in ai_message.tool_calls]
 
-        # tool_message 두개 가져오기 - 왜? 추가 질문을 한번에 두개까지 할 수 있음
+        # tool_message 가져오기
         tool_messages =  filter_messages(messages, include_types=[ToolMessage], include_ids=tool_call_ids)
         for tool in tool_messages:
-            if tool != 'None':
-                split_result = tool.content.split(',')
+            content = tool.content
+            if content != 'null':
+                split_result = content.split(',')
+                print(split_result)
                 filtering[split_result[0]] = split_result[1]
 
         print(filtering)

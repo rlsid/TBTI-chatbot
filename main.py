@@ -21,8 +21,8 @@ from typing import (
 ) 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "api_key"
-os.environ["LANGCHAIN_PROJECT"] = "TBTI_1"
+os.environ["LANGCHAIN_API_KEY"] = "api key"
+os.environ["LANGCHAIN_PROJECT"] = "test"
 
 # 사용자별 메모리 저장용 딕셔너리
 user_checkpointers = {}
@@ -62,7 +62,8 @@ app = FastAPI()
 
 
 # 호출할 함수 리스트 가져오기
-tools = tools_of_travel + tools_of_type["list_of_func"]
+tools = tools_of_travel["list_of_func"] + tools_of_type["list_of_func"]
+
 
 # 이전 state 값 저장
 previous_state = {
@@ -70,8 +71,8 @@ previous_state = {
     "previous_result" : None,
     "final_response" : None,
     "tbti_of_user" : None,
-    "filtering" : None,
-    "name_of_tools": [],
+    "filtering" : {},
+    "name_of_list" : []
 }
 
 db = database
@@ -98,6 +99,7 @@ async def ask_ai(request: QuestionRequest):
         system_prompt = """
         - You are a tour guide called 'TBTI'. Ask the user a short and clear question.
         - Only up to five locations will be notified.
+        - Don't ask a question what type of trip the user wants
         """
 
         messages_list = [("system", f"{system_prompt}")] 
@@ -106,7 +108,7 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = user_agent.invoke(previous_state, config)
-        print(response)
+        print(response['final_response'])
         previous_state = response
 
         # JSON 직렬화 시 SecretStr 값 처리

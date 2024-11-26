@@ -108,4 +108,15 @@ def search_specific_place(question : str, place_name : str = None) -> json:
     return f"user question: {question} \n\nreference: \n{total_results}"
     
 
-tools_of_travel = [recommand_travel_destination, create_travel_plan, search_specific_place]
+tools_of_travel = {
+    "recommand_travel_destination": {
+        "func": recommand_travel_destination
+    },
+    "create_travel_place": {
+        "func": create_travel_plan
+    },
+    "search_specific_place": {
+        "func": search_specific_place
+    },
+    "list_of_func" : [recommand_travel_destination, create_travel_plan, search_specific_place]
+}
