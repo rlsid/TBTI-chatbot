@@ -77,7 +77,7 @@ def create_my_agent(
     # 새로운 검색 필터 생성 노드
     def generate_new_filter(state: AgentState):
         filtering = {}
-        system_prompt = []
+        system_prompt = ['Ask a question in Korean one by one.']
 
         # 사용자 여행 유형 가져오기
         tbti = state['tbti_of_user']
@@ -117,23 +117,6 @@ def create_my_agent(
 
         return {"filtering": filtering, "messages": messages}
     
-    '''
-    # 여행 유형에 맞는 추가 질문이 가능한 모델 만들기
-    def make_model_with_tools(state: AgentState):
-        name_of_tools = state["name_of_tools"]
-        system_message = 'Ask a question in Korean one by one.'
-
-        # 호출할 추가 도구 리스트 및 질문 가져오기
-        for name in name_of_tools:
-            added_msg = tools_of_type[name]["added_system_message"] + ' '
-            system_message = system_message + added_msg
-
-        messages = [
-            ("system", f"{system_message}")
-        ]
-
-        return {"messages": messages}
-    '''
     # 사용할 AI 모델 로드 및 AI 답변 처리
     def talk_to_model(state: AgentState):
         response = model_with_tools.invoke(state['messages'])

@@ -98,7 +98,7 @@ async def ask_ai(request: QuestionRequest):
         system_prompt = """
         - You are a tour guide called 'TBTI'. Ask the user a short and clear question.
         - Only up to five locations will be notified.
-        - Don't ask a question what type of trip the user wants
+        - Don't ask a question what type of trip the user wants.
         """
 
         messages_list = [("system", f"{system_prompt}")] 
@@ -107,7 +107,7 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = user_agent.invoke(previous_state, config)
-        print(response)
+        #print(response)
         previous_state = response
 
         # JSON 직렬화 시 SecretStr 값 처리

@@ -16,7 +16,7 @@ system_informations_of_functions = {
         "response_format" : response_format_1,
         "system_prompt" :  """
 - Use the information from the reference and do not use any information other than the reference. Do not use the information you know.
-- The answer is in Korean.
+- The answer is a string in Korean.
 - When you plan your trip, you must meet the following conditions.
 1. We recommend places to visit for each date. At this time, the number of places to recommend for each date should be three.
 2. The distance between each destination must be within 10 km, even if it is not on the same day.

@@ -7,14 +7,14 @@ from openAI_api import embedding
 from typing import Optional
 
 @tool
-def recommand_travel_destination(question : str, location : str, area : str, filtering: Annotated[Optional[dict], InjectedState('filtering')]) -> str:
+def recommand_travel_destination(question : str, location : str, area : str, filtering: Annotated[dict, InjectedState('filtering')]) -> str:
     """
     recommand the various places that user wants to know or to travel
     It only works when user wants to know the various places.
     It doesn't work when user told to plan the trip and when user told to reserve the place.
 
     Args:
-        question: input the user's questions.
+        question: input the user's questions as it is.
         location: input the area of Korea to travel, e.g. 서울 or 부산 or 대구 or 강원도
         area: Enter only the following words to indicate where the place in the user's question belongs to the following Korean administrative districts. e.g. 강원특별자치도 
               - 한국 행정 구역 : 서울특별시, 부산광역시, 인천광역시, 대구광역시, 대전광역시, 광주광역시, 울산광역시, 세종특별자치시, 경기도, 충청북도, 충청남도, 전라남도, 경상북도, 경상남도, 강원특별자치도, 전북특별자치도, 제주특별자치도
@@ -45,12 +45,12 @@ def recommand_travel_destination(question : str, location : str, area : str, fil
 
 
 @tool
-def create_travel_plan(question : str, location : str, area : str, duration : str, filtering: Annotated[Optional[dict], InjectedState('filtering')]) -> json:
+def create_travel_plan(question : str, location : str, area : str, duration : str, filtering: Annotated[dict, InjectedState('filtering')]) -> json:
     """
     works when the user wants to plan a trip
 
     Args:
-        question: input the user's questions.
+        question: input the user's questions as it is.
         location: input the area of Korea to travel, e.g. 서울 or 부산 or 대구 or 강원도
         area: Enter only the following words to indicate where the place in the user's question belongs to the following Korean administrative districts. e.g. 강원특별자치도 
               - 한국 행정 구역 : 서울특별시, 부산광역시, 인천광역시, 대구광역시, 대전광역시, 광주광역시, 울산광역시, 세종특별자치시, 경기도, 충청북도, 충청남도, 전라남도, 경상북도, 경상남도, 강원특별자치도, 전북특별자치도, 제주특별자치도
