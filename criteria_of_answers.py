@@ -24,7 +24,7 @@ system_informations_of_functions = {
 4. Each place must have a place name, location, a short description of the place. Express each element separately by line modulation.
 5. Let me know the estimated total amount of consumption.
 """
-    },
+},
 
     "search_specific_place" : {
         "response_format":  response_format_2,

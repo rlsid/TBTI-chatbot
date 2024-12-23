@@ -117,7 +117,7 @@ def create_my_agent(
     # 사용할 AI 모델 로드 및 AI 답변 처리
     def talk_to_model(state: AgentState):
         response = model_with_tools.invoke(state['messages'])
-        last_response = response.content.strip("<>() ").replace('\"', '\'')
+        last_response = response.content.replace('\"', '\'')
         last_response = f'{{\"answer\": \"{last_response}\", \"place\": null}}'
 
         # AI 답변을 json 형식의 문자열로 만들어 previous_result에 저장 / 답변 history에 저장 
@@ -140,16 +140,19 @@ def create_my_agent(
         
         ai_message = filter_messages(messages, include_types=[AIMessage])[-1]
         tool_call_ids = [item['id'] for item in ai_message.tool_calls]
-
+  
         # 이전 실행된 tool 결과 가져오기
         tool_messages =  filter_messages(messages, include_types=[ToolMessage], include_ids=tool_call_ids)
         for tool in tool_messages:
             content = tool.content
-            if content != 'null':
-                split_result = content.split(',')
-                print(split_result)
+            split_result = content.split(',')
+            if split_result[1] != 'null':
                 filtering[split_result[0]] = split_result[1]
+            else:
+                if split_result[0] in filtering:
+                    del filtering[split_result[0]]
 
+        print('filteirng: ', filtering)
         return {"filtering": filtering}
 
     # 도구 작동 후 함수 결과 LLM에게 최종 전달 후 답변 생성
@@ -179,7 +182,7 @@ def create_my_agent(
             messages=messages,
             response_format=response_format
         ).choices[0].message.content   
-
+        
         return {"previous_result": llm_response}
     
     # 도구를 작동 시킬 지 파악

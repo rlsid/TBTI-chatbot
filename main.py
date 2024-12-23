@@ -21,7 +21,7 @@ from typing import (
 ) 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "api key"
+os.environ["LANGCHAIN_API_KEY"] = "key"
 os.environ["LANGCHAIN_PROJECT"] = "test"
 
 # 사용자별 메모리 저장용 딕셔너리
@@ -100,6 +100,7 @@ async def ask_ai(request: QuestionRequest):
         - You are a tour guide called 'TBTI'. Ask the user a short and clear question.
         - Only up to five locations will be notified.
         - Don't ask a question what type of trip the user wants.
+        - '어' is the same as 'yes' in English.
         """
 
         messages_list = [("system", f"{system_prompt}")] 
@@ -108,7 +109,7 @@ async def ask_ai(request: QuestionRequest):
 
         # 에이전트 실행
         response = user_agent.invoke(previous_state, config)
-        print(response['final_response'])
+        #print(response['final_response'])
         previous_state = response
 
         # JSON 직렬화 시 SecretStr 값 처리
@@ -119,7 +120,7 @@ async def ask_ai(request: QuestionRequest):
         raise HTTPException(status_code=500, detail="AI 처리 중 오류 발생")
     finally:
         db.unconnect()
-
+        #print("test")
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
